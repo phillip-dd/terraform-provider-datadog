@@ -122,6 +122,11 @@ func resourceDatadogDowntime() *schema.Resource {
 								ValidateFunc: validateDatadogDowntimeRecurrenceWeekDays,
 							},
 						},
+						"rrule": {
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"recurrence.period", "recurrence.type", "recurrence.until_date", "recurrence.until_occurrences", "recurrence.week_days"},
+						},
 					},
 				},
 			},
@@ -267,6 +272,9 @@ func buildDowntimeStruct(authV1 context.Context, d *schema.ResourceData, client 
 			}
 			recurrence.SetWeekDays(weekDays)
 		}
+		if attr, ok := d.GetOk("recurrence.0.rrule"); ok {
+			recurrence.SetRrule(attr.(string))
+		}
 
 		dt.SetRecurrence(recurrence)
 	}
@@ -400,6 +408,9 @@ func resourceDatadogDowntimeRead(d *schema.ResourceData, meta interface{}) error
 				weekDays = append(weekDays, weekDay)
 			}
 			recurrence["week_days"] = weekDays
+		}
+		if attr, ok := r.GetRruleOk(); ok {
+			recurrence["rrule"] = attr
 		}
 		recurrenceList = append(recurrenceList, recurrence)
 		d.Set("recurrence", recurrenceList)
